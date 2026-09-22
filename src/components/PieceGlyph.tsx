@@ -20,6 +20,7 @@ export function isRedSide(owner: Seat): boolean {
   return owner === "chessWhite" || owner === "xiangqiRed";
 }
 
+/** Xiangqi only: the chess set never switches to characters. */
 const RED_CHARACTERS: Partial<Record<PieceType, string>> = {
   general: "帥",
   advisor: "仕",
@@ -28,12 +29,6 @@ const RED_CHARACTERS: Partial<Record<PieceType, string>> = {
   horse: "傌",
   cannon: "炮",
   soldier: "兵",
-  king: "♔",
-  queen: "♕",
-  rook: "♖",
-  bishop: "♗",
-  knight: "♘",
-  pawn: "♙",
 };
 
 const BLACK_CHARACTERS: Partial<Record<PieceType, string>> = {
@@ -44,12 +39,6 @@ const BLACK_CHARACTERS: Partial<Record<PieceType, string>> = {
   horse: "馬",
   cannon: "砲",
   soldier: "卒",
-  king: "♚",
-  queen: "♛",
-  rook: "♜",
-  bishop: "♝",
-  knight: "♞",
-  pawn: "♟",
 };
 
 export function characterFor(type: PieceType, owner: Seat): string {
@@ -96,23 +85,24 @@ export interface PieceGlyphProps {
 
 export function PieceGlyph({ type, owner, notation }: PieceGlyphProps) {
   const colors = PALETTE[owner];
-  const { pf, ps, pd } = colors;
+  const { ps, pd } = colors;
 
-  if (notation === "character") {
-    const onDisc = !isChessPiece(type);
+  // The notation toggle is about the xiangqi pieces only. Chess pieces keep
+  // their usual artwork either way -- nobody wants the chess set swapped for
+  // Unicode glyphs just to read a cannon as 炮.
+  if (notation === "character" && !isChessPiece(type)) {
     return (
       <g aria-label={PIECE_LABELS[type]}>
-        {onDisc ? <circle cx="50" cy="50" r="47" fill={pd} /> : null}
+        <circle cx="50" cy="50" r="47" fill={pd} />
+        <circle cx="50" cy="50" r="42" fill="none" stroke={ps} strokeWidth="2.5" />
         <text
           x="50"
-          y="52"
+          y="53"
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={isChessPiece(type) ? 72 : 58}
+          fontSize={58}
           fontWeight={700}
-          fill={onDisc ? ps : pf}
-          stroke={onDisc ? "none" : ps}
-          strokeWidth={onDisc ? 0 : 1.5}
+          fill={ps}
           style={{
             fontFamily:
               '"Noto Serif SC", "Source Han Serif SC", "PingFang SC", "Microsoft YaHei", SimSun, serif',
