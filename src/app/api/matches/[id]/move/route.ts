@@ -39,16 +39,20 @@ export async function POST(
       // Throws RuleError on anything illegal, which surfaces as a 400.
       const next = applyMove(decodeState(doc.state), body.seat!, body.move!);
 
+      const version = doc.version + 1;
       tx.update(ref, {
         state: encodeState(next),
         status: next.status === "finished" ? "finished" : "active",
-        version: doc.version + 1,
+        version,
         updatedAt: Date.now(),
       });
-      return next.status;
+      // The client holds its optimistic copy of this move until a snapshot at
+      // or past this version arrives, so it never flashes back to the old
+      // position while Firestore catches up.
+      return { status: next.status, version };
     });
 
-    return Response.json({ ok: true, status: result });
+    return Response.json({ ok: true, ...result });
   } catch (e) {
     return errorResponse(e);
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { MatchView } from "@/components/MatchView";
 import {
@@ -17,6 +17,12 @@ import {
   type MatchDoc,
 } from "@/lib/matchDoc";
 import { SEATS } from "@/rules/geometry";
+import { applyMove } from "@/rules/match";
+import {
+  prunePending,
+  replayPending,
+  type PendingMove,
+} from "@/lib/optimistic";
 import { PALETTE } from "@/components/PieceGlyph";
 import type { Move, Seat, Team } from "@/rules/types";
 
@@ -57,10 +63,27 @@ export default function MatchPage({
     return () => stop();
   }, [configured, id]);
 
-  const match = useMemo(
+  const [pending, setPending] = useState<PendingMove[]>([]);
+  const nextToken = useRef(0);
+
+  /** Authoritative state, exactly as the server last wrote it. */
+  const serverMatch = useMemo(
     () => (document ? decodeState(document.state) : null),
     [document],
   );
+
+  /** What the player sees: the server's state plus unconfirmed moves. */
+  const match = useMemo(
+    () => (serverMatch ? replayPending(serverMatch, pending) : null),
+    [serverMatch, pending],
+  );
+
+  // Retire optimistic moves once a snapshot has caught up with them.
+  useEffect(() => {
+    if (!document) return;
+    setPending((current) => prunePending(current, document.version));
+  }, [document]);
+
   const mySeats = useMemo(
     () => (document && uid ? seatsFor(document, uid) : []),
     [document, uid],
@@ -102,10 +125,34 @@ export default function MatchPage({
   }
 
   async function handleMove(seat: Seat, move: Move) {
+    if (!match) return;
     setError(null);
+
+    // Run it locally first. An illegal move fails here, with no round trip and
+    // nothing shown on the board.
     try {
-      await postJson(`/api/matches/${id}/move`, { seat, move });
+      applyMove(match, seat, move);
     } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      return;
+    }
+
+    const token = ++nextToken.current;
+    setPending((current) => [...current, { token, seat, move, acceptedAt: null }]);
+
+    try {
+      const res = await postJson<{ version: number }>(
+        `/api/matches/${id}/move`,
+        { seat, move },
+      );
+      setPending((current) =>
+        current.map((p) =>
+          p.token === token ? { ...p, acceptedAt: res.version } : p,
+        ),
+      );
+    } catch (e) {
+      // The server refused it, so take it back off the board.
+      setPending((current) => current.filter((p) => p.token !== token));
       setError(e instanceof Error ? e.message : String(e));
     }
   }
@@ -117,7 +164,7 @@ export default function MatchPage({
         <div className="card">
           <p>
             Firebase is not configured. See <code>.env.local.example</code>, or
-            play on the <a href="/local">hot seat board</a>.
+            play <a href="/local">singleplayer</a>.
           </p>
         </div>
       </main>
