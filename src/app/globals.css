@@ -116,11 +116,48 @@ a {
 }
 
 .panel {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 6px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 14px;
   min-width: 0;
+}
+
+.panel__body { min-width: 0; }
+
+/* The turn marker rides this rail, sliding between the two seat rows. */
+.rail {
+  position: relative;
+  width: 22px;
+}
+
+.rail__dot {
+  position: absolute;
+  left: 3px;
+  top: 13px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid;
+  box-shadow: 0 0 0 3px rgba(201, 144, 63, 0.45);
+  transition:
+    top 340ms cubic-bezier(0.34, 1.2, 0.5, 1),
+    background-color 340ms ease,
+    border-color 340ms ease,
+    box-shadow 340ms ease;
+}
+
+.rail__dot--near { top: calc(100% - 28px); }
+
+.rail__dot--won {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 16px 4px rgba(201, 144, 63, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail__dot { transition: none; }
 }
 
 
@@ -340,31 +377,15 @@ a {
 .seat {
   display: flex;
   align-items: center;
-  gap: 8px;
   min-height: 40px;
-  padding: 3px 4px;
+  padding: 3px 0;
 }
 
-.token {
-  flex: 0 0 auto;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid;
-  opacity: 0.32;
-  transition: opacity 120ms ease, box-shadow 120ms ease, transform 120ms ease;
-}
 
-.token--active {
-  opacity: 1;
-  transform: scale(1.25);
-  box-shadow: 0 0 0 3px rgba(201, 144, 63, 0.55);
-}
 
-.token--won {
-  opacity: 1;
-  box-shadow: 0 0 0 3px var(--accent), 0 0 14px 3px rgba(201, 144, 63, 0.6);
-}
+
+
+
 
 .seat__hand {
   display: flex;
@@ -406,4 +427,11 @@ a {
   gap: 5px;
   align-items: center;
   margin-right: 6px;
+}
+
+.badge-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid;
 }

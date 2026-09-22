@@ -106,6 +106,26 @@ function buildChess() {
   return parts;
 }
 
+/**
+ * The dark pieces use Cburnett's own dark artwork rather than the light
+ * geometry recoloured. Recolouring gives a dark body that needs a light
+ * outline for its engraved lines to survive, which reads badly; the real dark
+ * set is a black piece with a black outline and white detail lines inside.
+ * Pure black is softened slightly so it sits better on a warm board.
+ */
+function buildChessDark() {
+  const parts = {};
+  for (const [type, file] of Object.entries(CHESS_FILES)) {
+    const dark = file.replace("lt.svg", "dt.svg");
+    const raw = fs.readFileSync(path.join(ROOT, "assets/cburnett", dark), "utf8");
+    const softened = innerSvg(raw)
+      .replace(/#(?:000000|000)\b/gi, "#1c1916")
+      .replace(/#(?:ffffff|fff)\b/gi, "#efe8db");
+    parts[type] = toJsx(softened);
+  }
+  return parts;
+}
+
 /* ---------------------------------------------------------------- xiangqi */
 
 const XQ_ORDER = [
@@ -188,6 +208,7 @@ async function buildXiangqi() {
 /* ------------------------------------------------------------------- emit */
 
 const chess = buildChess();
+const chessDark = buildChessDark();
 const variants = await buildXiangqi();
 
 const out = [];
@@ -237,7 +258,20 @@ for (const [type, jsx] of Object.entries(chess)) {
 }
 out.push("};");
 out.push("");
+out.push("/** Cburnett's own dark artwork, used as drawn. */");
+out.push(
+  "export const CHESS_ART_DARK: Partial<Record<PieceType, JSX.Element>> = {",
+);
+for (const [type, jsx] of Object.entries(chessDark)) {
+  out.push(`  ${type}: (`);
+  out.push("    <>");
+  out.push(jsx);
+  out.push("    </>");
+  out.push("  ),");
+}
+out.push("};");
+out.push("");
 
 fs.writeFileSync(OUT, out.join("\n"));
-console.log(`wrote ${path.relative(ROOT, OUT)} - ${Object.keys(chess).length} chess vectors`);
+console.log(`wrote ${path.relative(ROOT, OUT)} - ${Object.keys(chess).length} light + ${Object.keys(chessDark).length} dark chess vectors`);
 console.log(`wrote ${XQ_ORDER.length * variants.length} xiangqi tiles to public/pieces`);

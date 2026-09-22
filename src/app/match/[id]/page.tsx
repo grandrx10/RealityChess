@@ -240,7 +240,7 @@ function SeatBadge({ seats }: { seats: Seat[] }) {
         return (
           <span
             key={s}
-            className="token token--active"
+            className="badge-dot"
             style={{ background: pf, borderColor: ps }}
             title={SEAT_NAMES[s]}
           />

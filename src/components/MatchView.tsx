@@ -8,7 +8,7 @@ import {
   PieceIcon,
   type PieceNotation,
 } from "./PieceGlyph";
-import { boardOfSeat, seatsOfBoard, teamOf } from "@/rules/geometry";
+import { SEATS, boardOfSeat, seatsOfBoard, teamOf } from "@/rules/geometry";
 import { findRoyal, inCheck } from "@/rules/movement";
 import {
   PROMOTION_CHOICES,
@@ -28,6 +28,8 @@ import type {
   Seat,
   Square,
 } from "@/rules/types";
+
+const SEAT_COUNT = SEATS.length;
 
 const TRAY_ORDER: PieceType[] = [
   "queen",
@@ -247,53 +249,83 @@ function BoardPanel({
   onArm: (kind: BoardKind, piece: PieceType | null) => void;
 }) {
   const board = match.boards[kind];
-  const mine = controlled.filter((s) => boardOfSeat(s) === kind);
-  const [bottomSeat, topSeat] = seatsOfBoard(kind);
-  // Flip only for someone sitting on the far side alone; a hot seat holding
-  // both would otherwise spin the board over on every move.
-  const flipped = mine.length === 1 && mine[0] === topSeat;
-  const nearSeat = flipped ? topSeat : bottomSeat;
-  const farSeat = flipped ? bottomSeat : topSeat;
+  const [naturalBottom, naturalTop] = seatsOfBoard(kind);
+
+  /*
+   * Partners sit on the same side of the screen. Teams are Xiangqi Red with
+   * Chess Black, so the near side is Chess Black on one board and Xiangqi Red
+   * on the other -- which means the chess board is drawn flipped. Watching
+   * your partner's captures arrive from the row opposite yours would be
+   * backwards, whatever chess convention says.
+   */
+  // A hot seat holds every seat and has no team of its own, so it defaults to
+  // Team A: Chess Black nearest on one board, Xiangqi Red on the other.
+  const nearTeam =
+    controlled.length > 0 && controlled.length < SEAT_COUNT
+      ? teamOf(controlled[0])
+      : "teamA";
+  const nearSeat =
+    teamOf(naturalBottom) === nearTeam ? naturalBottom : naturalTop;
+  const farSeat = nearSeat === naturalBottom ? naturalTop : naturalBottom;
+  const flipped = nearSeat === naturalTop;
 
   const checkedSeat = seatsOfBoard(kind).find((s) => inCheck(board, s)) ?? null;
   const checkAt = checkedSeat ? findRoyal(board, checkedSeat) : null;
 
+  // One marker per board, sliding between the two seat rows.
+  const nearToMove = seatMayMove(match, nearSeat);
+  const markerSeat = nearToMove ? nearSeat : farSeat;
+  const decided = match.status === "finished" && match.result?.winner != null;
+  const restSeat = decided
+    ? (match.result!.winner === teamOf(nearSeat) ? nearSeat : farSeat)
+    : markerSeat;
+  const { pf, ps } = PALETTE[restSeat];
+
   return (
     <section className="panel">
-      <SeatRow
-        seat={farSeat}
-        match={match}
-        controlled={controlled}
-        notation={notation}
-        armed={armed?.board === kind ? armed.piece : null}
-        onArm={(p) => onArm(kind, p)}
-      />
-      <BoardView
-        board={board}
-        notation={notation}
-        flipped={flipped}
-        selected={selection?.board === kind ? selection.from : null}
-        targets={selection?.board === kind ? targets : []}
-        dropTargets={armed?.board === kind ? dropTargets : []}
-        checkAt={checkAt}
-        onSquareClick={(sq) => onSquareClick(kind, sq)}
-      />
-      <SeatRow
-        seat={nearSeat}
-        match={match}
-        controlled={controlled}
-        notation={notation}
-        armed={armed?.board === kind ? armed.piece : null}
-        onArm={(p) => onArm(kind, p)}
-      />
+      <div className="rail" aria-hidden>
+        <span
+          className={`rail__dot${restSeat === nearSeat ? " rail__dot--near" : ""}${
+            decided ? " rail__dot--won" : ""
+          }`}
+          style={{ background: pf, borderColor: ps }}
+        />
+      </div>
+      <div className="panel__body">
+        <SeatRow
+          seat={farSeat}
+          match={match}
+          controlled={controlled}
+          notation={notation}
+          armed={armed?.board === kind ? armed.piece : null}
+          onArm={(p) => onArm(kind, p)}
+        />
+        <BoardView
+          board={board}
+          notation={notation}
+          flipped={flipped}
+          selected={selection?.board === kind ? selection.from : null}
+          targets={selection?.board === kind ? targets : []}
+          dropTargets={armed?.board === kind ? dropTargets : []}
+          checkAt={checkAt}
+          onSquareClick={(sq) => onSquareClick(kind, sq)}
+        />
+        <SeatRow
+          seat={nearSeat}
+          match={match}
+          controlled={controlled}
+          notation={notation}
+          armed={armed?.board === kind ? armed.piece : null}
+          onArm={(p) => onArm(kind, p)}
+        />
+      </div>
     </section>
   );
 }
 
 /**
- * A seat's whole presence: a token that lights up when it is their turn, and
- * whatever they are holding. No labels -- the token's colour and position say
- * which side it is, and the pieces say the rest.
+ * A seat's hand. The turn itself is shown by the marker on the rail, which
+ * slides between the two rows, so nothing here needs a label.
  */
 function SeatRow({
   seat,
@@ -314,19 +346,9 @@ function SeatRow({
   const held = TRAY_ORDER.filter((t) => (reserve[t] ?? 0) > 0);
   const active = seatMayMove(match, seat);
   const mine = controlled.includes(seat);
-  const won =
-    match.status === "finished" &&
-    match.result?.winner != null &&
-    match.result.winner === teamOf(seat);
-
-  const { pf, ps } = PALETTE[seat];
 
   return (
     <div className={`seat${active ? " seat--active" : ""}`}>
-      <span
-        className={`token${active ? " token--active" : ""}${won ? " token--won" : ""}`}
-        style={{ background: pf, borderColor: ps }}
-      />
       <div className="seat__hand">
         {held.map((type) => (
           <button

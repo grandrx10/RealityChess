@@ -2,6 +2,7 @@ import type { PieceType, Seat } from "@/rules/types";
 import { isChessPiece } from "@/rules/geometry";
 import {
   CHESS_ART,
+  CHESS_ART_DARK,
   CHESS_SCALE,
   xiangqiSprite,
   type XiangqiVariant,
@@ -121,6 +122,20 @@ export function PieceGlyph({ type, owner, notation }: PieceGlyphProps) {
         </text>
       </g>
     );
+  }
+
+  // Dark seats use Cburnett's own dark artwork: a black piece with a black
+  // outline and white detail lines inside, rather than the light geometry
+  // recoloured, which needs a pale outline to keep its detail and reads badly.
+  if (!isRedSide(owner)) {
+    const darkArt = CHESS_ART_DARK[type];
+    if (darkArt) {
+      return (
+        <g aria-label={PIECE_LABELS[type]} transform={CHESS_SCALE}>
+          {darkArt}
+        </g>
+      );
+    }
   }
 
   const draw = CHESS_ART[type];
