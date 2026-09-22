@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+
+  --bg: #14110e;
+  --surface: #1e1a16;
+  --surface-2: #272119;
+  --line: #3a3128;
+  --text: #f0e9df;
+  --muted: #a89b88;
+  --accent: #c9903f;
+
+  --chess-light: #e9dcc3;
+  --chess-dark: #a9784d;
+  --river: rgba(86, 152, 168, 0.28);
+  --river-line: #5f9bb0;
+
+  --xq-bg: #e8cf9f;
+  --xq-line: #6b4a24;
+  --disc: #f3e4c4;
+  --red-ink: #a4231f;
+  --black-ink: #1d1a15;
+
+  --hl-last: rgba(201, 144, 63, 0.3);
+  --hl-select: rgba(255, 214, 120, 0.5);
+  --hl-check: rgba(214, 62, 52, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+
+/* ------------------------------------------------------------------ match */
+
+.match__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.match__tools {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle,
+.btn {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.toggle:hover,
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.banner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.banner--error {
+  background: rgba(214, 62, 52, 0.15);
+  border: 1px solid rgba(214, 62, 52, 0.5);
+}
+
+.boards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.panel__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+
+.panel__turn {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.panel__hint {
+  color: var(--muted);
+  font-size: 11.5px;
+  margin: 10px 0 0;
+}
+
+/* ------------------------------------------------------------------ board */
+
+.board {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  margin: 10px 0;
+  touch-action: manipulation;
+}
+
+.board .sq-light { fill: var(--chess-light); }
+.board .sq-dark { fill: var(--chess-dark); }
+.board .xq-bg { fill: var(--xq-bg); }
+.board .river-band { fill: var(--river); }
+.board .river-dash { stroke: var(--river-line); stroke-width: 3; }
+.board .ring { fill: none; stroke-width: 3; }
+.board .ring--red { stroke: var(--red-ink); }
+.board .ring--black { stroke: var(--black-ink); }
+
+.board .grid {
+  stroke: var(--xq-line);
+  stroke-width: 3;
+}
+
+.board .disc {
+  fill: var(--disc);
+  stroke: var(--xq-line);
+  stroke-width: 3;
+}
+
+.board .hit {
+  cursor: pointer;
+}
+
+.board .hl {
+  fill: var(--hl-last);
+  pointer-events: none;
+}
+
+.board .hl.selected {
+  fill: var(--hl-select);
+}
+
+.board .hl.check {
+  fill: var(--hl-check);
+}
+
+.board .ind {
+  pointer-events: none;
+}
+
+.board .ind--move {
+  fill: rgba(30, 30, 30, 0.42);
+}
+
+.board .ind--capture {
+  stroke: rgba(214, 62, 52, 0.85);
+  stroke-width: 8;
+}
+
+.board .ind--drop {
+  fill: rgba(70, 160, 120, 0.75);
+  stroke: rgba(20, 60, 45, 0.6);
+  stroke-width: 3;
+}
+
+.river-label {
+  fill: var(--river-line);
+  font-size: 22px;
+  letter-spacing: 0.32em;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.river-han {
+  fill: var(--xq-line);
+  font-size: 40px;
+  letter-spacing: 0.1em;
+  font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+  opacity: 0.75;
+}
+
+/* ------------------------------------------------------------------ trays */
+
+.tray {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 54px;
+}
+
+.tray__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.tray__empty {
+  color: var(--muted);
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.tray__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #3d342a;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 3px 7px 3px 3px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.chip--armed {
+  border-color: var(--accent);
+  background: #4b3d2a;
+}
+
+.chip__count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ modal */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+  padding: 16px;
+}
+
+.modal__card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  max-width: 420px;
+  width: 100%;
+}
+
+.modal__title {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.modal__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ------------------------------------------------------------------ lobby */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.input {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text);
+  font: inherit;
+  min-width: 0;
+  flex: 1 1 200px;
+}

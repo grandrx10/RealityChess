@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Clients read game documents directly, which is what makes the lobby and the
+// board update live. They never write them: every mutation goes through an
+// API route that re-runs the rules engine with the Admin SDK, which bypasses
+// these rules. So the only safe client permission here is read.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /matches/{matchId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
