@@ -83,7 +83,7 @@ export default function LobbyPage() {
             <code>.env.local</code>, fill it in, and restart the dev server.
           </p>
           <p>
-            The <a href="/local">hot seat board</a> works with no backend.
+            The <a href="/local">singleplayer board</a> works with no backend.
           </p>
         </div>
       </main>
@@ -97,7 +97,7 @@ export default function LobbyPage() {
       {error ? <div className="banner banner--error">{error}</div> : null}
 
       <div className="lobby">
-        <section className="pane">
+        <section className="pane pane--list">
           {rows.length === 0 ? (
             <p className="empty">No open tables</p>
           ) : (
@@ -151,7 +151,7 @@ export default function LobbyPage() {
               </button>
             </div>
             <a className="btn" href="/local" style={{ textAlign: "center" }}>
-              Hot seat
+              Singleplayer
             </a>
           </div>
         </aside>

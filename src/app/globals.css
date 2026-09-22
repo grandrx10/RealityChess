@@ -209,6 +209,26 @@ a {
   overflow: hidden;
 }
 
+/*
+ * The table list keeps a constant shape however many tables there are, and
+ * scrolls inside itself rather than pushing the page around. Bounded so it
+ * does not become a letterbox on a wide monitor or a sliver on a short one.
+ */
+.pane--list {
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 16 / 10;
+  min-height: 300px;
+  max-height: 68vh;
+}
+
+.pane--list > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .pane__pad {
   padding: 18px;
 }
@@ -276,7 +296,11 @@ a {
 }
 
 .empty {
-  padding: 34px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  margin: 0;
   text-align: center;
   color: var(--muted);
 }
