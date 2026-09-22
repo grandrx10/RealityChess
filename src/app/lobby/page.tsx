@@ -26,7 +26,7 @@ interface Row extends MatchDoc {
 export default function LobbyPage() {
   const configured = firebaseConfigured();
   const [rows, setRows] = useState<Row[]>([]);
-  const [name, setName] = useState("Open table");
+  const [name, setName] = useState("");
   const [mode, setMode] = useState<MatchMode>("2v2");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export default function LobbyPage() {
     setError(null);
     try {
       const { id } = await postJson<{ id: string }>("/api/matches", {
-        name,
+        name: name.trim() || "Open table",
         mode,
       });
       window.location.href = `/match/${id}`;
@@ -76,16 +76,14 @@ export default function LobbyPage() {
   if (!configured) {
     return (
       <main className="shell">
-        <h1 className="title">Lobby</h1>
+        <h1 className="brand">REALITY CHESS</h1>
         <div className="card">
           <p>
-            Firebase is not configured yet. Copy <code>.env.local.example</code>{" "}
-            to <code>.env.local</code> and fill in your project&apos;s values,
-            then restart the dev server.
+            Firebase is not configured. Copy <code>.env.local.example</code> to{" "}
+            <code>.env.local</code>, fill it in, and restart the dev server.
           </p>
           <p>
-            In the meantime the <a href="/local">hot seat board</a> works with
-            no backend at all.
+            The <a href="/local">hot seat board</a> works with no backend.
           </p>
         </div>
       </main>
@@ -94,56 +92,69 @@ export default function LobbyPage() {
 
   return (
     <main className="shell">
-      <h1 className="title">Lobby</h1>
-      <p className="subtitle">
-        Open tables. 2v2 seats four players; 1v1 gives each player both boards
-        for their team.
-      </p>
+      <h1 className="brand">REALITY CHESS</h1>
 
       {error ? <div className="banner banner--error">{error}</div> : null}
 
-      <div className="card">
-        <h2 className="panel__title">New table</h2>
-        <div className="row">
-          <input
-            className="input"
-            value={name}
-            maxLength={40}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Table name"
-          />
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setMode(mode === "2v2" ? "1v1" : "2v2")}
-          >
-            {mode}
-          </button>
-          <button type="button" className="btn" disabled={busy} onClick={create}>
-            {busy ? "Creating…" : "Create"}
-          </button>
-        </div>
-      </div>
+      <div className="lobby">
+        <section className="pane">
+          {rows.length === 0 ? (
+            <p className="empty">No open tables</p>
+          ) : (
+            <ul className="tables">
+              {rows.map((row) => {
+                const taken = SEATS.filter((s) => row.seats[s]).length;
+                return (
+                  <li key={row.id}>
+                    <a className="table-row" href={`/match/${row.id}`}>
+                      <span className="table-row__name">{row.name}</span>
+                      <span className="tag">{row.mode}</span>
+                      <span className="seats" aria-label={`${taken} of 4 seated`}>
+                        {SEATS.map((s, i) => (
+                          <i key={s} className={i < taken ? "on" : undefined} />
+                        ))}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
-      <div className="card">
-        <h2 className="panel__title">Open tables</h2>
-        {rows.length === 0 ? (
-          <p className="subtitle" style={{ margin: 0 }}>
-            Nothing open right now.
-          </p>
-        ) : (
-          <ul>
-            {rows.map((row) => {
-              const taken = SEATS.filter((s) => row.seats[s]).length;
-              return (
-                <li key={row.id}>
-                  <a href={`/match/${row.id}`}>{row.name}</a> — {row.mode},{" "}
-                  {taken}/4 seated
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <aside className="pane pane__pad">
+          <div className="stack">
+            <input
+              className="input"
+              value={name}
+              maxLength={40}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Table name"
+            />
+            <div className="row">
+              <button
+                type="button"
+                className="btn"
+                title="2v2: four players, boards run independently. 1v1: two players, strict turn cycle."
+                onClick={() => setMode(mode === "2v2" ? "1v1" : "2v2")}
+              >
+                {mode}
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary"
+                disabled={busy}
+                onClick={create}
+                style={{ flex: "1 1 auto" }}
+              >
+                {busy ? "…" : "New table"}
+              </button>
+            </div>
+            <a className="btn" href="/local" style={{ textAlign: "center" }}>
+              Hot seat
+            </a>
+          </div>
+        </aside>
       </div>
     </main>
   );
