@@ -17,6 +17,7 @@ import {
   type MatchDoc,
 } from "@/lib/matchDoc";
 import { SEATS } from "@/rules/geometry";
+import { PALETTE } from "@/components/PieceGlyph";
 import type { Move, Seat, Team } from "@/rules/types";
 
 const SEAT_NAMES: Record<Seat, string> = {
@@ -24,11 +25,6 @@ const SEAT_NAMES: Record<Seat, string> = {
   chessBlack: "Chess · Black",
   xiangqiRed: "Xiangqi · Red",
   xiangqiBlack: "Xiangqi · Black",
-};
-
-const TEAM_NAMES: Record<Team, string> = {
-  teamA: "Team A — Xiangqi Red + Chess Black",
-  teamB: "Team B — Xiangqi Black + Chess White",
 };
 
 export default function MatchPage({
@@ -148,16 +144,10 @@ export default function MatchPage({
 
   return (
     <main className="shell">
-      <h1 className="title">{document.name}</h1>
-      <p className="subtitle">
-        {document.mode} · {TEAM_NAMES.teamA} vs {TEAM_NAMES.teamB}
-      </p>
-
       {error ? <div className="banner banner--error">{error}</div> : null}
 
       {waiting ? (
         <div className="card">
-          <h2 className="panel__title">Take a seat</h2>
           <div className="row" style={{ marginBottom: 12 }}>
             <input
               className="input"
@@ -181,8 +171,8 @@ export default function MatchPage({
                     disabled={busy || (Boolean(occupant) && !mine)}
                     onClick={() => claim([seat])}
                   >
-                    {SEAT_NAMES[seat]}
-                    {occupant ? ` — ${occupant.name}${mine ? " (you)" : ""}` : " — open"}
+                    <SeatBadge seats={[seat]} />
+                    {occupant ? occupant.name : ""}
                   </button>
                 );
               })}
@@ -201,8 +191,8 @@ export default function MatchPage({
                     disabled={busy || (Boolean(occupant) && !mine)}
                     onClick={() => claim(seats)}
                   >
-                    {TEAM_NAMES[team]}
-                    {occupant ? ` — ${occupant.name}${mine ? " (you)" : ""}` : " — open"}
+                    <SeatBadge seats={seats} />
+                    {occupant ? occupant.name : ""}
                   </button>
                 );
               })}
@@ -211,37 +201,51 @@ export default function MatchPage({
 
           <div className="row" style={{ marginTop: 12 }}>
             {mySeats.length > 0 ? (
-              <button type="button" className="btn" disabled={busy} onClick={leave}>
-                Stand up
+              <button
+                type="button"
+                className="icon-btn"
+                title="Stand up"
+                disabled={busy}
+                onClick={leave}
+              >
+                ✕
               </button>
             ) : null}
             {document.host === uid ? (
               <button
                 type="button"
-                className="btn"
+                className="icon-btn"
+                title="Start match"
                 disabled={busy || !isFull(document)}
                 onClick={start}
               >
-                {isFull(document) ? "Start match" : "Waiting for players…"}
+                ▶
               </button>
-            ) : (
-              <span className="subtitle" style={{ margin: 0 }}>
-                Waiting for the host to start.
-              </span>
-            )}
+            ) : null}
           </div>
-        </div>
-      ) : null}
-
-      {mySeats.length === 0 && !waiting ? (
-        <div className="card">
-          <p style={{ margin: 0 }}>
-            You are watching this match. Moves are disabled.
-          </p>
         </div>
       ) : null}
 
       <MatchView match={match} controlled={mySeats} onMove={handleMove} />
     </main>
+  );
+}
+
+/** Coloured tokens standing in for seat names. */
+function SeatBadge({ seats }: { seats: Seat[] }) {
+  return (
+    <span className="badge">
+      {seats.map((s) => {
+        const { pf, ps } = PALETTE[s];
+        return (
+          <span
+            key={s}
+            className="token token--active"
+            style={{ background: pf, borderColor: ps }}
+            title={SEAT_NAMES[s]}
+          />
+        );
+      })}
+    </span>
   );
 }

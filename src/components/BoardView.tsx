@@ -149,7 +149,6 @@ function ChessBoardView({
               type={piece.type}
               owner={piece.owner}
               notation={notation}
-              size={size}
             />
           </g>
         );
@@ -339,34 +338,23 @@ function XiangqiBoardView({
       {selected ? <Spot sq={selected} px={px} className="selected" /> : null}
       {checkAt ? <Spot sq={checkAt} px={px} className="check" /> : null}
 
-      {/* Pieces sit on the intersections as discs. */}
+      {/* Xiangqi-native art carries its own disc, so nothing extra is drawn
+          here: a piece on a disc is one that follows the xiangqi rulebook. */}
       {allSquares(board).map((sq) => {
         const piece = board.squares[sq.r * board.width + sq.f];
         if (!piece) return null;
         const { x, y } = px(sq);
-        const R = CELL * 0.44;
-        const red = piece.owner === "xiangqiRed" || piece.owner === "chessWhite";
-        const glyph = CELL * 0.62;
+        const glyph = CELL * 0.94;
         return (
-          <g key={`p-${keyOf(sq)}`}>
-            <circle cx={x} cy={y} r={R} className="disc" />
-            <circle
-              cx={x}
-              cy={y}
-              r={R - 6}
-              fill="none"
-              className={red ? "ring ring--red" : "ring ring--black"}
+          <g
+            key={`p-${keyOf(sq)}`}
+            transform={`translate(${x - glyph / 2} ${y - glyph / 2}) scale(${glyph / 100})`}
+          >
+            <PieceGlyph
+              type={piece.type}
+              owner={piece.owner}
+              notation={notation}
             />
-            <g
-              transform={`translate(${x - glyph / 2} ${y - glyph / 2}) scale(${glyph / 100})`}
-            >
-              <PieceGlyph
-                type={piece.type}
-                owner={piece.owner}
-                notation={notation}
-                size={glyph}
-              />
-            </g>
           </g>
         );
       })}

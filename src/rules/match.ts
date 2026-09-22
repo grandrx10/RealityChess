@@ -91,6 +91,22 @@ export function seatMayMove(match: MatchState, seat: Seat): boolean {
   return true;
 }
 
+/**
+ * Which of the seats a client controls is playing on a given board.
+ *
+ * Hot seat holds both seats of a board, so this has to prefer whichever one is
+ * on the clock. Resolving by board alone pins the chess board to White for the
+ * whole game and silently drops every click Black makes.
+ */
+export function seatToPlay(
+  match: MatchState,
+  controlled: Seat[],
+  board: BoardKind,
+): Seat | null {
+  const mine = controlled.filter((s) => boardOfSeat(s) === board);
+  return mine.find((s) => seatMayMove(match, s)) ?? mine[0] ?? null;
+}
+
 /** Every seat that could legally move right now. */
 export function seatsToMove(match: MatchState): Seat[] {
   return SEATS.filter((s) => seatMayMove(match, s));

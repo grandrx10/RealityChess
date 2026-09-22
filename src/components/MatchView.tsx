@@ -1,16 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { BoardView } from "./BoardView";
-import { ReserveTray } from "./ReserveTray";
-import { PIECE_LABELS, type PieceNotation } from "./PieceGlyph";
-import { boardOfSeat, partnerOf, seatsOfBoard } from "@/rules/geometry";
+import {
+  PALETTE,
+  PIECE_LABELS,
+  PieceIcon,
+  type PieceNotation,
+} from "./PieceGlyph";
+import { boardOfSeat, seatsOfBoard, teamOf } from "@/rules/geometry";
 import { findRoyal, inCheck } from "@/rules/movement";
 import {
   PROMOTION_CHOICES,
   legalDropTargets,
   legalTargetsFrom,
   seatMayMove,
+  seatToPlay,
 } from "@/rules/match";
 import type {
   BoardKind,
@@ -19,21 +24,24 @@ import type {
   Move,
   MoveTarget,
   PieceType,
+  Reserve,
   Seat,
   Square,
 } from "@/rules/types";
 
-const SEAT_NAMES: Record<Seat, string> = {
-  chessWhite: "Chess · White",
-  chessBlack: "Chess · Black",
-  xiangqiRed: "Xiangqi · Red",
-  xiangqiBlack: "Xiangqi · Black",
-};
-
-const TEAM_NAMES = {
-  teamA: "Team A (Red + Chess Black)",
-  teamB: "Team B (Xiangqi Black + White)",
-} as const;
+const TRAY_ORDER: PieceType[] = [
+  "queen",
+  "rook",
+  "bishop",
+  "knight",
+  "pawn",
+  "chariot",
+  "cannon",
+  "horse",
+  "elephant",
+  "advisor",
+  "soldier",
+];
 
 interface Selection {
   board: BoardKind;
@@ -58,22 +66,29 @@ export interface MatchViewProps {
   controlled: Seat[];
   onMove: (seat: Seat, move: Move) => void;
   error?: string | null;
+  /** Page-level controls, shown beside the notation toggle. */
+  toolbar?: ReactNode;
 }
 
-export function MatchView({ match, controlled, onMove, error }: MatchViewProps) {
+export function MatchView({
+  match,
+  controlled,
+  onMove,
+  error,
+  toolbar,
+}: MatchViewProps) {
   const [notation, setNotation] = useState<PieceNotation>("icon");
   const [selection, setSelection] = useState<Selection | null>(null);
   const [armed, setArmed] = useState<Armed | null>(null);
   const [promotion, setPromotion] = useState<PendingPromotion | null>(null);
 
-  /** The seat this client controls on a given board, if any. */
   const seatOn = (kind: BoardKind): Seat | null =>
-    controlled.find((s) => boardOfSeat(s) === kind) ?? null;
+    seatToPlay(match, controlled, kind);
 
-  const targets: MoveTarget[] = useMemo(() => {
-    if (!selection) return [];
-    return legalTargetsFrom(match, selection.from, selection.board);
-  }, [match, selection]);
+  const targets: MoveTarget[] = useMemo(
+    () => (selection ? legalTargetsFrom(match, selection.from, selection.board) : []),
+    [match, selection],
+  );
 
   const dropTargets: Square[] = useMemo(() => {
     if (!armed) return [];
@@ -83,7 +98,7 @@ export function MatchView({ match, controlled, onMove, error }: MatchViewProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match, armed, controlled]);
 
-  function clearSelection() {
+  function clear() {
     setSelection(null);
     setArmed(null);
   }
@@ -93,11 +108,10 @@ export function MatchView({ match, controlled, onMove, error }: MatchViewProps) 
     const seat = seatOn(kind);
     if (!seat || !seatMayMove(match, seat)) return;
 
-    // Placing an armed reserve piece.
     if (armed && armed.board === kind) {
       if (dropTargets.some((t) => t.f === sq.f && t.r === sq.r)) {
         onMove(seat, { kind: "drop", board: kind, piece: armed.piece, to: sq });
-        clearSelection();
+        clear();
       } else {
         setArmed(null);
       }
@@ -107,7 +121,6 @@ export function MatchView({ match, controlled, onMove, error }: MatchViewProps) 
     const board = match.boards[kind];
     const piece = board.squares[sq.r * board.width + sq.f];
 
-    // Completing a move.
     if (selection && selection.board === kind) {
       const target = targets.find((t) => t.to.f === sq.f && t.to.r === sq.r);
       if (target) {
@@ -116,23 +129,17 @@ export function MatchView({ match, controlled, onMove, error }: MatchViewProps) 
         } else {
           onMove(seat, { kind: "move", board: kind, from: selection.from, to: sq });
         }
-        clearSelection();
+        clear();
         return;
       }
     }
 
-    // Selecting one of your own pieces.
     if (piece && piece.owner === seat) {
       setSelection({ board: kind, from: sq });
       setArmed(null);
       return;
     }
-    clearSelection();
-  }
-
-  function handleArm(kind: BoardKind, piece: PieceType | null) {
-    setSelection(null);
-    setArmed(piece ? { board: kind, piece } : null);
+    clear();
   }
 
   function choosePromotion(choice: ChessPieceType) {
@@ -149,70 +156,66 @@ export function MatchView({ match, controlled, onMove, error }: MatchViewProps) 
 
   return (
     <div className="match">
-      <header className="match__bar">
-        <div className="match__status">
-          <StatusLine match={match} controlled={controlled} />
-        </div>
-        <div className="match__tools">
-          <button
-            type="button"
-            className="toggle"
-            onClick={() =>
-              setNotation((n) => (n === "icon" ? "character" : "icon"))
-            }
-          >
-            {notation === "icon" ? "Pieces: images" : "Pieces: 漢字"}
-          </button>
-        </div>
-      </header>
+      <div className="match__bar">
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="Switch piece notation"
+          title="Pieces: images / characters"
+          onClick={() => setNotation((n) => (n === "icon" ? "character" : "icon"))}
+        >
+          {notation === "icon" ? (
+            <span className="han">車</span>
+          ) : (
+            <PieceIcon type="horse" owner="xiangqiRed" notation="icon" size={26} />
+          )}
+        </button>
+        {toolbar}
+      </div>
 
       {error ? <div className="banner banner--error">{error}</div> : null}
 
       <div className="boards">
-        <BoardPanel
-          kind="chess"
-          title="Chess"
-          match={match}
-          controlled={controlled}
-          notation={notation}
-          selection={selection}
-          targets={targets}
-          dropTargets={dropTargets}
-          armed={armed}
-          onSquareClick={handleSquareClick}
-          onArm={handleArm}
-        />
-        <BoardPanel
-          kind="xiangqi"
-          title="Xiangqi"
-          match={match}
-          controlled={controlled}
-          notation={notation}
-          selection={selection}
-          targets={targets}
-          dropTargets={dropTargets}
-          armed={armed}
-          onSquareClick={handleSquareClick}
-          onArm={handleArm}
-        />
+        {(["chess", "xiangqi"] as BoardKind[]).map((kind) => (
+          <BoardPanel
+            key={kind}
+            kind={kind}
+            match={match}
+            controlled={controlled}
+            notation={notation}
+            selection={selection}
+            targets={targets}
+            dropTargets={dropTargets}
+            armed={armed}
+            onSquareClick={handleSquareClick}
+            onArm={(k, p) => {
+              setSelection(null);
+              setArmed(p ? { board: k, piece: p } : null);
+            }}
+          />
+        ))}
       </div>
 
       {promotion ? (
         <div className="modal" role="dialog" aria-label="Choose a promotion">
           <div className="modal__card">
-            <p className="modal__title">Promote to</p>
-            <div className="modal__row">
-              {PROMOTION_CHOICES.map((choice) => (
-                <button
-                  key={choice}
-                  type="button"
-                  className="btn"
-                  onClick={() => choosePromotion(choice)}
-                >
-                  {PIECE_LABELS[choice]}
-                </button>
-              ))}
-            </div>
+            {PROMOTION_CHOICES.map((choice) => (
+              <button
+                key={choice}
+                type="button"
+                className="icon-btn icon-btn--lg"
+                aria-label={PIECE_LABELS[choice]}
+                title={PIECE_LABELS[choice]}
+                onClick={() => choosePromotion(choice)}
+              >
+                <PieceIcon
+                  type={choice}
+                  owner={promotion.seat}
+                  notation={notation}
+                  size={44}
+                />
+              </button>
+            ))}
           </div>
         </div>
       ) : null}
@@ -222,7 +225,6 @@ export function MatchView({ match, controlled, onMove, error }: MatchViewProps) 
 
 function BoardPanel({
   kind,
-  title,
   match,
   controlled,
   notation,
@@ -234,7 +236,6 @@ function BoardPanel({
   onArm,
 }: {
   kind: BoardKind;
-  title: string;
   match: MatchState;
   controlled: Seat[];
   notation: PieceNotation;
@@ -246,37 +247,27 @@ function BoardPanel({
   onArm: (kind: BoardKind, piece: PieceType | null) => void;
 }) {
   const board = match.boards[kind];
-  const mySeat = controlled.find((s) => boardOfSeat(s) === kind) ?? null;
+  const mine = controlled.filter((s) => boardOfSeat(s) === kind);
   const [bottomSeat, topSeat] = seatsOfBoard(kind);
-  // Show the board from the perspective of whoever is sitting here.
-  const flipped = mySeat === topSeat;
-  const myTurn = mySeat ? seatMayMove(match, mySeat) : false;
+  // Flip only for someone sitting on the far side alone; a hot seat holding
+  // both would otherwise spin the board over on every move.
+  const flipped = mine.length === 1 && mine[0] === topSeat;
+  const nearSeat = flipped ? topSeat : bottomSeat;
+  const farSeat = flipped ? bottomSeat : topSeat;
 
   const checkedSeat = seatsOfBoard(kind).find((s) => inCheck(board, s)) ?? null;
   const checkAt = checkedSeat ? findRoyal(board, checkedSeat) : null;
 
-  const nearSeat = flipped ? topSeat : bottomSeat;
-  const farSeat = flipped ? bottomSeat : topSeat;
-
   return (
     <section className="panel">
-      <h2 className="panel__title">
-        {title}
-        <span className="panel__turn">
-          {board.toMove === nearSeat ? "▼" : "▲"} {SEAT_NAMES[board.toMove]} to move
-        </span>
-      </h2>
-
-      <ReserveTray
+      <SeatRow
         seat={farSeat}
-        reserve={match.reserves[farSeat]}
+        match={match}
+        controlled={controlled}
         notation={notation}
-        armed={armed?.board === kind && farSeat === mySeat ? armed.piece : null}
-        interactive={farSeat === mySeat && myTurn}
+        armed={armed?.board === kind ? armed.piece : null}
         onArm={(p) => onArm(kind, p)}
-        label={`${SEAT_NAMES[farSeat]} · in hand`}
       />
-
       <BoardView
         board={board}
         notation={notation}
@@ -287,48 +278,73 @@ function BoardPanel({
         checkAt={checkAt}
         onSquareClick={(sq) => onSquareClick(kind, sq)}
       />
-
-      <ReserveTray
+      <SeatRow
         seat={nearSeat}
-        reserve={match.reserves[nearSeat]}
+        match={match}
+        controlled={controlled}
         notation={notation}
-        armed={armed?.board === kind && nearSeat === mySeat ? armed.piece : null}
-        interactive={nearSeat === mySeat && myTurn}
+        armed={armed?.board === kind ? armed.piece : null}
         onArm={(p) => onArm(kind, p)}
-        label={`${SEAT_NAMES[nearSeat]} · in hand`}
       />
-
-      <p className="panel__hint">
-        Captures here go to {SEAT_NAMES[partnerOf(nearSeat)]} and{" "}
-        {SEAT_NAMES[partnerOf(farSeat)]}.
-      </p>
     </section>
   );
 }
 
-function StatusLine({
+/**
+ * A seat's whole presence: a token that lights up when it is their turn, and
+ * whatever they are holding. No labels -- the token's colour and position say
+ * which side it is, and the pieces say the rest.
+ */
+function SeatRow({
+  seat,
   match,
   controlled,
+  notation,
+  armed,
+  onArm,
 }: {
+  seat: Seat;
   match: MatchState;
   controlled: Seat[];
+  notation: PieceNotation;
+  armed: PieceType | null;
+  onArm: (piece: PieceType | null) => void;
 }) {
-  if (match.status === "finished" && match.result) {
-    const { winner, reason, board } = match.result;
-    return (
-      <strong>
-        {winner ? `${TEAM_NAMES[winner]} wins` : "Draw"} — {reason}
-        {board ? ` on the ${board} board` : ""}
-      </strong>
-    );
-  }
-  const yours = controlled.filter((s) => seatMayMove(match, s));
-  if (yours.length === 0) {
-    return <span>Waiting for the other side…</span>;
-  }
+  const reserve: Reserve = match.reserves[seat];
+  const held = TRAY_ORDER.filter((t) => (reserve[t] ?? 0) > 0);
+  const active = seatMayMove(match, seat);
+  const mine = controlled.includes(seat);
+  const won =
+    match.status === "finished" &&
+    match.result?.winner != null &&
+    match.result.winner === teamOf(seat);
+
+  const { pf, ps } = PALETTE[seat];
+
   return (
-    <span>
-      Your move: <strong>{yours.map((s) => SEAT_NAMES[s]).join(" and ")}</strong>
-    </span>
+    <div className={`seat${active ? " seat--active" : ""}`}>
+      <span
+        className={`token${active ? " token--active" : ""}${won ? " token--won" : ""}`}
+        style={{ background: pf, borderColor: ps }}
+      />
+      <div className="seat__hand">
+        {held.map((type) => (
+          <button
+            key={type}
+            type="button"
+            className={`chip${armed === type && mine ? " chip--armed" : ""}`}
+            disabled={!mine || !active}
+            aria-label={PIECE_LABELS[type]}
+            title={PIECE_LABELS[type]}
+            onClick={() => onArm(armed === type ? null : type)}
+          >
+            <PieceIcon type={type} owner={seat} notation={notation} size={26} />
+            {(reserve[type] ?? 0) > 1 ? (
+              <span className="chip__n">{reserve[type]}</span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

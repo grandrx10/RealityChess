@@ -59,6 +59,10 @@ src/rules/        Pure, dependency-free rules engine. No network, no framework.
   match.ts          Legality, drops, turn order, endings, applyMove
   rules.test.ts     Unit tests plus perft baselines
 src/components/   Board and piece rendering (SVG)
+  pieceArt.tsx      GENERATED -- run `npm run art`, never edit by hand
+assets/           Licensed source artwork (see ATTRIBUTION.md)
+scripts/          The art generator
+public/pieces/    GENERATED xiangqi tiles
 src/lib/          Firebase client/admin wiring and the match document shape
 src/app/          Next.js App Router: home, hot seat, lobby, match, API routes
 ```
@@ -78,6 +82,21 @@ npm run dev
 `/local` is a hot-seat board that plays the full variant with no backend at
 all. Good for learning the rules and for checking that a change to the engine
 feels right.
+
+The board carries no labels: a small token beside each side lights up when it
+is that side's turn, and whatever a player is holding sits next to it. The only
+other controls are the notation toggle (images or 漢字), the mode switch and
+new match.
+
+`npm run art` regenerates the piece artwork from `assets/` into
+`src/components/pieceArt.tsx` and `public/pieces/`. You only need it if you
+change the source art. See ATTRIBUTION.md -- both sets are CC BY-SA 3.0 and
+that licence follows the artwork if you publish this.
+
+Pieces are drawn from two sets, and which set a piece came from is the signal
+that matters: a piece **on a disc** follows the xiangqi rulebook, wherever it
+has been dropped. So a cannon sitting on the chess board still looks like a
+xiangqi cannon, and still needs a screen to capture.
 
 `npm test` runs the suite. It includes perft baselines checked against the
 published node counts for both games — chess 20 / 400 / 8902 and xiangqi 44 /

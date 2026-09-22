@@ -9,6 +9,7 @@ import {
   legalDropTargets,
   legalTargetsFrom,
   positionKey,
+  seatToPlay,
 } from "./match";
 import type {
   BoardKind,
@@ -617,5 +618,37 @@ describe("the full cross-board loop", () => {
     // b8 is missing only because black's own cannon stands there -- not
     // because of any hobbling leg, which a chess knight does not have.
     expect(jumps).not.toContain("b8");
+  });
+});
+
+describe("whose seat a client is playing on a board", () => {
+  it("follows the clock when one client holds both seats (hot seat)", () => {
+    const all: Seat[] = [
+      "chessWhite",
+      "chessBlack",
+      "xiangqiRed",
+      "xiangqiBlack",
+    ];
+    let match = createMatch("2v2");
+    expect(seatToPlay(match, all, "chess")).toBe("chessWhite");
+
+    match = applyMove(match, "chessWhite", {
+      kind: "move",
+      board: "chess",
+      from: sq("e2"),
+      to: sq("e4"),
+    });
+    // Resolving by board alone would still say chessWhite here, and every
+    // click Black made would be discarded.
+    expect(seatToPlay(match, all, "chess")).toBe("chessBlack");
+    expect(seatToPlay(match, all, "xiangqi")).toBe("xiangqiRed");
+  });
+
+  it("returns the single seat an online player holds, in turn or not", () => {
+    const mine: Seat[] = ["chessBlack"];
+    const match = createMatch("2v2");
+    // Not their turn yet, but it is still their seat.
+    expect(seatToPlay(match, mine, "chess")).toBe("chessBlack");
+    expect(seatToPlay(match, mine, "xiangqi")).toBeNull();
   });
 });

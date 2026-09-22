@@ -79,10 +79,7 @@ a {
   margin-bottom: 16px;
 }
 
-.match__tools {
-  display: flex;
-  gap: 8px;
-}
+
 
 .toggle,
 .btn {
@@ -126,27 +123,11 @@ a {
   min-width: 0;
 }
 
-.panel__title {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: baseline;
-  justify-content: space-between;
-  font-size: 15px;
-  margin: 0 0 10px;
-}
 
-.panel__turn {
-  font-weight: 400;
-  color: var(--muted);
-  font-size: 12px;
-}
 
-.panel__hint {
-  color: var(--muted);
-  font-size: 11.5px;
-  margin: 10px 0 0;
-}
+
+
+
 
 /* ------------------------------------------------------------------ board */
 
@@ -165,20 +146,16 @@ a {
 .board .xq-bg { fill: var(--xq-bg); }
 .board .river-band { fill: var(--river); }
 .board .river-dash { stroke: var(--river-line); stroke-width: 3; }
-.board .ring { fill: none; stroke-width: 3; }
-.board .ring--red { stroke: var(--red-ink); }
-.board .ring--black { stroke: var(--black-ink); }
+
+
+
 
 .board .grid {
   stroke: var(--xq-line);
   stroke-width: 3;
 }
 
-.board .disc {
-  fill: var(--disc);
-  stroke: var(--xq-line);
-  stroke-width: 3;
-}
+
 
 .board .hit {
   cursor: pointer;
@@ -234,33 +211,13 @@ a {
 
 /* ------------------------------------------------------------------ trays */
 
-.tray {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 10px;
-  min-height: 54px;
-}
 
-.tray__label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
 
-.tray__empty {
-  color: var(--muted);
-  font-size: 12px;
-  opacity: 0.7;
-}
 
-.tray__items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
+
+
+
+
 
 .chip {
   display: inline-flex;
@@ -284,11 +241,7 @@ a {
   background: #4b3d2a;
 }
 
-.chip__count {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
+
 
 /* ------------------------------------------------------------------ modal */
 
@@ -348,4 +301,109 @@ a {
   font: inherit;
   min-width: 0;
   flex: 1 1 200px;
+}
+
+/* ------------------------------------------------------------- seat rows */
+
+.match__bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0;
+  background: none;
+  border: none;
+  margin-bottom: 12px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-btn:hover { border-color: var(--accent); }
+.icon-btn--lg { width: 58px; height: 58px; }
+
+.han {
+  font-size: 20px;
+  font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+}
+
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 3px 4px;
+}
+
+.token {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid;
+  opacity: 0.32;
+  transition: opacity 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.token--active {
+  opacity: 1;
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px rgba(201, 144, 63, 0.55);
+}
+
+.token--won {
+  opacity: 1;
+  box-shadow: 0 0 0 3px var(--accent), 0 0 14px 3px rgba(201, 144, 63, 0.6);
+}
+
+.seat__hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 2px solid transparent;
+  border-radius: 7px;
+  padding: 2px 4px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.chip:disabled { opacity: 0.45; cursor: default; }
+.chip--armed { border-color: var(--accent); background: #4b3d2a; }
+
+.chip__n {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  padding-right: 2px;
+}
+
+.modal__card {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: auto;
+}
+
+.badge {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  margin-right: 6px;
 }
