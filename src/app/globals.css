@@ -544,3 +544,27 @@ a {
   border-radius: 14px;
   padding: 18px;
 }
+
+/* What just happened: an arrow for a move, a ring for a piece dropped in. */
+.board .last-move {
+  pointer-events: none;
+}
+
+.board .arrow line {
+  stroke: #2563a8;
+  stroke-width: 9;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.board .arrow polygon {
+  fill: #2563a8;
+  opacity: 0.85;
+}
+
+.board .dropmark {
+  fill: none;
+  stroke: #1f9d55;
+  stroke-width: 8;
+  opacity: 0.9;
+}

@@ -307,6 +307,7 @@ function BoardPanel({
           selected={selection?.board === kind ? selection.from : null}
           targets={selection?.board === kind ? targets : []}
           dropTargets={armed?.board === kind ? dropTargets : []}
+          lastMove={board.lastMove ?? null}
           checkAt={checkAt}
           onSquareClick={(sq) => onSquareClick(kind, sq)}
         />

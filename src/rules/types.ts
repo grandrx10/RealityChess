@@ -54,6 +54,14 @@ export interface CastlingRights {
   blackQ: boolean;
 }
 
+/** The move just played on a board, for the UI to point at. */
+export interface LastMove {
+  /** null when the piece was dropped from a reserve rather than moved. */
+  from: Square | null;
+  to: Square;
+  drop: boolean;
+}
+
 export interface BoardState {
   kind: BoardKind;
   width: number;
@@ -67,6 +75,7 @@ export interface BoardState {
   enPassant: Square | null;
   /** Plies played on this board. */
   ply: number;
+  lastMove: LastMove | null;
 }
 
 export type Reserve = Partial<Record<PieceType, number>>;

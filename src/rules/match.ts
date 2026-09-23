@@ -220,6 +220,7 @@ export function applyToBoard(
     }
   }
 
+  next.lastMove = { from, to, drop: false };
   next.ply += 1;
   return { board: next, captured };
 }
@@ -233,6 +234,7 @@ function applyDropToBoard(
   const next = cloneBoard(board);
   setPiece(next, to, { type: piece, owner });
   next.enPassant = null;
+  next.lastMove = { from: null, to, drop: true };
   next.ply += 1;
   return next;
 }

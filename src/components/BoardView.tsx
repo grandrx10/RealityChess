@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { PieceGlyph, type PieceNotation } from "./PieceGlyph";
-import type { BoardState, MoveTarget, Square } from "@/rules/types";
+import type { BoardState, LastMove, MoveTarget, Square } from "@/rules/types";
 
 const CELL = 100;
 
@@ -16,7 +16,7 @@ export interface BoardViewProps {
   targets: MoveTarget[];
   /** Destinations for a reserve piece that is armed for dropping. */
   dropTargets: Square[];
-  lastMove?: { from: Square | null; to: Square } | null;
+  lastMove?: LastMove | null;
   checkAt?: Square | null;
   onSquareClick: (sq: Square) => void;
 }
@@ -73,6 +73,10 @@ function ChessBoardView({
   onSquareClick,
 }: BoardViewProps) {
   const project = useProjection(board, flipped);
+  const centerOf = (sq: Square) => {
+    const { col, row } = project(sq);
+    return { x: col * CELL + CELL / 2, y: row * CELL + CELL / 2 };
+  };
   const W = board.width * CELL;
   const H = board.height * CELL;
   // The house river runs between ranks 4 and 5.
@@ -120,13 +124,6 @@ function ChessBoardView({
         </text>
       </g>
 
-      {lastMove ? (
-        <g className="last-move">
-          {lastMove.from ? <Highlight sq={lastMove.from} project={project} /> : null}
-          <Highlight sq={lastMove.to} project={project} />
-        </g>
-      ) : null}
-
       {selected ? (
         <Highlight sq={selected} project={project} className="selected" />
       ) : null}
@@ -153,6 +150,16 @@ function ChessBoardView({
           </g>
         );
       })}
+
+      {/* What just happened here, drawn over the pieces. */}
+      {lastMove ? (
+        <g className="last-move">
+          {lastMove.from ? (
+            <MoveArrow from={centerOf(lastMove.from)} to={centerOf(lastMove.to)} />
+          ) : null}
+          {lastMove.drop ? <DropMark at={centerOf(lastMove.to)} /> : null}
+        </g>
+      ) : null}
 
       {/* Legal-move indicators sit above the pieces so captures stay visible */}
       {allSquares(board).map((sq) => {
@@ -329,12 +336,6 @@ function XiangqiBoardView({
         漢 界
       </text>
 
-      {lastMove ? (
-        <g className="last-move">
-          {lastMove.from ? <Spot sq={lastMove.from} px={px} /> : null}
-          <Spot sq={lastMove.to} px={px} />
-        </g>
-      ) : null}
       {selected ? <Spot sq={selected} px={px} className="selected" /> : null}
       {checkAt ? <Spot sq={checkAt} px={px} className="check" /> : null}
 
@@ -358,6 +359,16 @@ function XiangqiBoardView({
           </g>
         );
       })}
+
+      {/* What just happened here, drawn over the pieces. */}
+      {lastMove ? (
+        <g className="last-move">
+          {lastMove.from ? (
+            <MoveArrow from={px(lastMove.from)} to={px(lastMove.to)} />
+          ) : null}
+          {lastMove.drop ? <DropMark at={px(lastMove.to)} /> : null}
+        </g>
+      ) : null}
 
       {allSquares(board).map((sq) => {
         const target = findTarget(targets, sq);
@@ -413,6 +424,47 @@ function Spot({
       className={`hl ${className}`}
     />
   );
+}
+
+
+/** Arrow from the square a piece left to the one it landed on. */
+function MoveArrow({
+  from,
+  to,
+}: {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1) return null;
+  const ux = dx / len;
+  const uy = dy / len;
+  const head = 30;
+  const gap = 20;
+  // Start clear of the origin piece and stop short so the head sits on the
+  // destination rather than overshooting it.
+  const sx = from.x + ux * gap;
+  const sy = from.y + uy * gap;
+  const ex = to.x - ux * head;
+  const ey = to.y - uy * head;
+  const nx = -uy;
+  const ny = ux;
+  const half = 13;
+  return (
+    <g className="arrow">
+      <line x1={sx} y1={sy} x2={ex} y2={ey} />
+      <polygon
+        points={`${to.x},${to.y} ${ex + nx * half},${ey + ny * half} ${ex - nx * half},${ey - ny * half}`}
+      />
+    </g>
+  );
+}
+
+/** Ring around a piece that was just dropped from a reserve. */
+function DropMark({ at }: { at: { x: number; y: number } }) {
+  return <circle className="dropmark" cx={at.x} cy={at.y} r={CELL * 0.44} />;
 }
 
 /** A dot for a quiet move, a ring for a capture, a square for a drop. */

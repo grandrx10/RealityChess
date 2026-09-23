@@ -12,6 +12,7 @@ function empty(kind: BoardKind, toMove: Seat): BoardState {
     castling: { whiteK: true, whiteQ: true, blackK: true, blackQ: true },
     enPassant: null,
     ply: 0,
+    lastMove: null,
   };
 }
 

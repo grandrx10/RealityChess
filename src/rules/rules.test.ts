@@ -45,6 +45,7 @@ function blankBoard(kind: BoardKind, toMove: Seat): BoardState {
     castling: { whiteK: false, whiteQ: false, blackK: false, blackQ: false },
     enPassant: null,
     ply: 0,
+    lastMove: null,
   };
 }
 
@@ -650,5 +651,44 @@ describe("whose seat a client is playing on a board", () => {
     // Not their turn yet, but it is still their seat.
     expect(seatToPlay(match, mine, "chess")).toBe("chessBlack");
     expect(seatToPlay(match, mine, "xiangqi")).toBeNull();
+  });
+});
+
+describe("last move marker", () => {
+  it("records where a piece came from and where it went", () => {
+    const match = applyMove(createMatch("2v2"), "chessWhite", {
+      kind: "move",
+      board: "chess",
+      from: sq("e2"),
+      to: sq("e4"),
+    });
+    expect(match.boards.chess.lastMove).toEqual({
+      from: sq("e2"),
+      to: sq("e4"),
+      drop: false,
+    });
+    // The other board is untouched.
+    expect(match.boards.xiangqi.lastMove).toBeNull();
+  });
+
+  it("marks a drop as having no origin", () => {
+    const match = scenario({
+      chess: [
+        { at: "e1", type: "king", owner: "chessWhite" },
+        { at: "e8", type: "king", owner: "chessBlack" },
+      ],
+      reserves: { chessWhite: { cannon: 1 } },
+    });
+    const next = applyMove(match, "chessWhite", {
+      kind: "drop",
+      board: "chess",
+      piece: "cannon",
+      to: sq("d4"),
+    });
+    expect(next.boards.chess.lastMove).toEqual({
+      from: null,
+      to: sq("d4"),
+      drop: true,
+    });
   });
 });
