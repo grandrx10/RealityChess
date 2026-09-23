@@ -132,10 +132,17 @@ describe("base engines (perft against published node counts)", () => {
     expect(perft(match, "chessWhite", 3)).toBe(8902);
   }, 60_000);
 
-  it("xiangqi: 44 / 1920 from the initial position", () => {
+  /*
+   * Standard xiangqi is 44 / 1920 here. This variant's horse has no hobbling
+   * leg, which frees one extra jump for each horse in the opening position, so
+   * these are regression baselines for the variant rather than a check against
+   * the published counts. The chess numbers above are still the published ones,
+   * since the chess board starts with no horses on it.
+   */
+  it("xiangqi: 46 / 2096 with the house rule on horses", () => {
     const match = createMatch("2v2");
-    expect(perft(match, "xiangqiRed", 1)).toBe(44);
-    expect(perft(match, "xiangqiRed", 2)).toBe(1920);
+    expect(perft(match, "xiangqiRed", 1)).toBe(46);
+    expect(perft(match, "xiangqiRed", 2)).toBe(2096);
   }, 60_000);
 });
 
@@ -244,23 +251,20 @@ describe("xiangqi pieces dropped on the chess board", () => {
     expect(t).not.toContain("d1");
   });
 
-  it("horse is blocked by its hobbling leg, unlike a chess knight", () => {
+  it("horse moves exactly as a chess knight, with no hobbling leg", () => {
+    // d5 would block the leg of the jumps to c6 and e6 in standard xiangqi.
     const horse = build("chess", "chessWhite", [
       { at: "d4", type: "horse", owner: "chessWhite" },
       { at: "d5", type: "pawn", owner: "chessWhite" },
     ]);
-    const horseTargets = targetNames(pseudoTargets(horse, sq("d4")));
-    expect(horseTargets).not.toContain("c6");
-    expect(horseTargets).not.toContain("e6");
-    expect(horseTargets).toContain("f5");
-
     const knight = build("chess", "chessWhite", [
       { at: "d4", type: "knight", owner: "chessWhite" },
       { at: "d5", type: "pawn", owner: "chessWhite" },
     ]);
-    const knightTargets = targetNames(pseudoTargets(knight, sq("d4")));
-    expect(knightTargets).toContain("c6");
-    expect(knightTargets).toContain("e6");
+    const horseTargets = targetNames(pseudoTargets(horse, sq("d4")));
+    expect(horseTargets).toEqual(targetNames(pseudoTargets(knight, sq("d4"))));
+    expect(horseTargets).toContain("c6");
+    expect(horseTargets).toContain("e6");
   });
 
   it("elephant moves two diagonally, is blocked by its eye, and cannot cross the river", () => {

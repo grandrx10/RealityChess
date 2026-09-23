@@ -25,20 +25,16 @@ const DIAG: ReadonlyArray<readonly [number, number]> = [
   [-1, -1],
 ];
 
-// Chess knight / xiangqi horse jumps, paired with the square that blocks a
-// horse's leg (the orthogonal step it takes first).
-const HORSE_JUMPS: ReadonlyArray<{
-  d: readonly [number, number];
-  leg: readonly [number, number];
-}> = [
-  { d: [1, 2], leg: [0, 1] },
-  { d: [-1, 2], leg: [0, 1] },
-  { d: [1, -2], leg: [0, -1] },
-  { d: [-1, -2], leg: [0, -1] },
-  { d: [2, 1], leg: [1, 0] },
-  { d: [2, -1], leg: [1, 0] },
-  { d: [-2, 1], leg: [-1, 0] },
-  { d: [-2, -1], leg: [-1, 0] },
+// Knight jumps, shared by the chess knight and the xiangqi horse.
+const KNIGHT_JUMPS: ReadonlyArray<readonly [number, number]> = [
+  [1, 2],
+  [-1, 2],
+  [1, -2],
+  [-1, -2],
+  [2, 1],
+  [2, -1],
+  [-2, 1],
+  [-2, -1],
 ];
 
 function slide(
@@ -103,32 +99,20 @@ function cannonTargets(
   }
 }
 
-function horseTargets(
-  board: BoardState,
-  from: Square,
-  owner: Seat,
-  out: Square[],
-): void {
-  for (const { d, leg } of HORSE_JUMPS) {
-    const blocker = { f: from.f + leg[0], r: from.r + leg[1] };
-    // The hobbling leg: an occupied orthogonal neighbour blocks the jump.
-    if (inBounds(board, blocker) && pieceAt(board, blocker)) continue;
-    const sq = { f: from.f + d[0], r: from.r + d[1] };
-    if (!inBounds(board, sq)) continue;
-    const occupant = pieceAt(board, sq);
-    if (!occupant || occupant.owner !== owner) out.push(sq);
-  }
-}
-
+/**
+ * House rule: the horse moves exactly as a chess knight, with no hobbling leg.
+ * Standard xiangqi blocks the jump when the orthogonal neighbour it steps
+ * through is occupied; here the two pieces are interchangeable, which is why
+ * the published xiangqi perft counts no longer apply to this board.
+ */
 function knightTargets(
   board: BoardState,
   from: Square,
   owner: Seat,
   out: Square[],
 ): void {
-  // A chess knight keeps chess rules everywhere: no hobbling leg.
-  for (const { d } of HORSE_JUMPS) {
-    const sq = { f: from.f + d[0], r: from.r + d[1] };
+  for (const [df, dr] of KNIGHT_JUMPS) {
+    const sq = { f: from.f + df, r: from.r + dr };
     if (!inBounds(board, sq)) continue;
     const occupant = pieceAt(board, sq);
     if (!occupant || occupant.owner !== owner) out.push(sq);
@@ -284,7 +268,7 @@ export function pseudoTargets(board: BoardState, from: Square): Square[] {
       cannonTargets(board, from, owner, out);
       break;
     case "horse":
-      horseTargets(board, from, owner, out);
+      knightTargets(board, from, owner, out);
       break;
     case "elephant":
       elephantTargets(board, from, owner, out);

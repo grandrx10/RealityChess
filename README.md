@@ -26,7 +26,7 @@ and 5. It matters only to pieces whose own rules mention it.
 | Piece | Behaviour on 8×8 |
 | --- | --- |
 | Chariot | Rook |
-| Horse | Knight, blocked by the hobbling leg |
+| Horse | Knight. House rule: no hobbling leg, so it is a chess knight |
 | Cannon | Rook slide; captures only over exactly one screen |
 | Elephant | Two points diagonally, blocked by the eye, may not cross the river |
 | Advisor | One point diagonally, no palace, may not cross the river |
@@ -37,8 +37,11 @@ drops are unrestricted, one dropped past the river becomes a permanent raider
 in enemy territory rather than being frozen.
 
 **Chess pieces dropped on the xiangqi board** ignore the river and the palace
-entirely. The knight is a true chess knight with no leg block. A pawn moves and
-captures as a chess pawn and promotes on rank 10.
+entirely. A pawn moves and captures as a chess pawn and promotes on rank 10.
+
+**Horses and knights are the same piece.** Standard xiangqi blocks a horse when
+the orthogonal square it steps through is occupied; this variant drops that, so
+the two are interchangeable wherever they end up.
 
 **Drop placement.** Onto the xiangqi board, you must drop on your own side of
 the river. Onto the chess board, anywhere empty. A pawn may not be dropped on
@@ -98,10 +101,10 @@ that matters: a piece **on a disc** follows the xiangqi rulebook, wherever it
 has been dropped. So a cannon sitting on the chess board still looks like a
 xiangqi cannon, and still needs a screen to capture.
 
-`npm test` runs the suite. It includes perft baselines checked against the
-published node counts for both games — chess 20 / 400 / 8902 and xiangqi 44 /
-1920 — so a regression in the base engines fails loudly before the variant
-layer is even considered.
+`npm test` runs the suite. The chess perft counts (20 / 400 / 8902) are the
+published ones, so a regression in that engine fails loudly. The xiangqi counts
+(46 / 2096) are variant baselines rather than published values, because the
+house rule on horses changes them from the standard 44 / 1920.
 
 ## Firebase setup
 
