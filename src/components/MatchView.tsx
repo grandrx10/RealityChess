@@ -177,6 +177,8 @@ export function MatchView({
 
       {error ? <div className="banner banner--error">{error}</div> : null}
 
+      {match.status === "finished" ? <GameOver match={match} /> : null}
+
       <div className="boards">
         {(["chess", "xiangqi"] as BoardKind[]).map((kind) => (
           <BoardPanel
@@ -368,6 +370,58 @@ function SeatRow({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+const SIDE_NAMES: Record<Seat, string> = {
+  chessWhite: "White",
+  chessBlack: "Black",
+  xiangqiRed: "Red",
+  xiangqiBlack: "Black",
+};
+
+/** The result, stated plainly. Nothing else on the page says who won. */
+function GameOver({ match }: { match: MatchState }) {
+  const result = match.result;
+  if (!result) return null;
+
+  const winners = result.winner
+    ? SEATS.filter((s) => teamOf(s) === result.winner)
+    : [];
+
+  return (
+    <div
+      className={`gameover${result.winner ? "" : " gameover--draw"}`}
+      role="status"
+    >
+      <span className="gameover__label">Game over</span>
+      <span className="gameover__who">
+        {result.winner ? (
+          <>
+            {winners.map((s) => (
+              <span
+                key={s}
+                className="badge-dot"
+                style={{
+                  background: PALETTE[s].pf,
+                  borderColor: PALETTE[s].ps,
+                }}
+              />
+            ))}
+            {winners
+              .map((s) => `${boardOfSeat(s) === "chess" ? "Chess" : "Xiangqi"} ${SIDE_NAMES[s]}`)
+              .join(" + ")}{" "}
+            wins
+          </>
+        ) : (
+          "Draw"
+        )}
+      </span>
+      <span className="gameover__why">
+        {result.reason}
+        {result.board ? ` · ${result.board} board` : ""}
+      </span>
     </div>
   );
 }

@@ -568,3 +568,48 @@ a {
   stroke-width: 8;
   opacity: 0.9;
 }
+
+/* The result. Loud on purpose: nothing else on the page says who won. */
+.gameover {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fdf6e6, #f8efdc);
+  border: 1px solid var(--accent);
+  box-shadow: 0 1px 0 rgba(176, 125, 34, 0.15);
+}
+
+.gameover--draw {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.gameover__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.gameover--draw .gameover__label {
+  color: var(--muted);
+}
+
+.gameover__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.gameover__why {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
